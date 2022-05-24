@@ -80,3 +80,4 @@ class B(A):
 One has to define class to take use of inheritance. Hence, set is not one of the cases involved in inheritance. 
 
 ### Compiler B: Memory management
+Our project has no conflict with memory management.
