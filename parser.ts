@@ -25,7 +25,7 @@ export function traverseLiteral(c : TreeCursor, s : string) : Literal<SourceLoca
     case "Number":
       return {
         tag: "num",
-        value: Number(s.substring(c.from, c.to)),
+        value: BigInt(s.substring(c.from, c.to)),
         a: location,
       }
     case "Boolean":
@@ -282,7 +282,7 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
         var stop_index: Expr<any>;
         var step: Expr<any> = {
           tag: "literal",
-          value: { tag: "num", value: 1 }
+          value: { tag: "num", value: BigInt(1) }
         };
 
         var indexItems = "";

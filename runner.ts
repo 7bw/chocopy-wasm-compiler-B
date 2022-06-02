@@ -91,16 +91,19 @@ export async function run(source : string, config: Config, astOpt: boolean = fal
   }
   // printProgIR(irprogram);
 
-  const progTyp = tprogram.a[0];
+  let progTyp = tprogram.a[0];
   var returnType = "";
   var returnExpr = "";
   // const lastExpr = parsed.stmts[parsed.stmts.length - 1]
   // const lastExprTyp = lastExpr.a;
   // console.log("LASTEXPR", lastExpr);
-  if(progTyp !== NONE) {
+  if (progTyp === NUM) {
+    progTyp = NONE;
+    returnExpr = "(local.get $$last)\n(call $print_last_num)\n(local.set $$last)" // use set to consume the element on stack
+  } else if (progTyp === BOOL) {
     returnType = "(result i32)";
     returnExpr = "(local.get $$last)"
-  } 
+  }
   let globalsBefore = config.env.globals;
   // const compiled = compiler.compile(tprogram, config.env);
   const compiled = compile(irprogram, globalEnv);
@@ -117,7 +120,11 @@ export async function run(source : string, config: Config, astOpt: boolean = fal
     const memory = new WebAssembly.Memory({initial:2000, maximum:2000});
     importObject.js = { memory: memory };
   }
-
+  const funcs = `(func $abs (import "imports" "abs") (param i32) (result i32))
+  (func $min (import "imports" "min") (param i32) (param i32) (result i32))
+  (func $max (import "imports" "max") (param i32) (param i32) (result i32))
+  (func $pow (import "imports" "pow") (param i32) (param i32) (result i32))
+  `
   const wasmSource = `(module
     (import "js" "memory" (memory 1))
     (func $index_out_of_bounds (import "imports" "index_out_of_bounds") (param i32) (param i32) (result i32))
@@ -126,11 +133,24 @@ export async function run(source : string, config: Config, astOpt: boolean = fal
     (func $key_not_found (import "imports" "key_not_found") (param i32) (result i32))
     (func $stack_push (import "imports" "stack_push") (param i32))
     (func $stack_clear (import "imports" "stack_clear"))
+    (func $print_last_num (import "imports" "print_last_num") (param i32) (result i32))
     (func $print_num (import "imports" "print_num") (param i32) (result i32))
+    (func $print_set_num (import "imports" "print_set_num") (param i32) (result i32))
     (func $print_bool (import "imports" "print_bool") (param i32) (result i32))
     (func $print_none (import "imports" "print_none") (param i32) (result i32))
+    (func $plus (import "imports" "plus") (param i32) (param i32) (result i32))
+    (func $minus (import "imports" "minus") (param i32) (param i32) (result i32))
+    (func $mul (import "imports" "mul") (param i32) (param i32) (result i32))
+    (func $iDiv (import "imports" "iDiv") (param i32) (param i32) (result i32))
+    (func $mod (import "imports" "mod") (param i32) (param i32) (result i32))
+    (func $eq (import "imports" "eq") (param i32) (param i32) (result i32))
+    (func $neq (import "imports" "neq") (param i32) (param i32) (result i32))
+    (func $lte (import "imports" "lte") (param i32) (param i32) (result i32))
+    (func $gte (import "imports" "gte") (param i32) (param i32) (result i32))
+    (func $lt (import "imports" "lt") (param i32) (param i32) (result i32))
+    (func $gt (import "imports" "gt") (param i32) (param i32) (result i32))
+    (func $get_num (import "imports" "get_num") (param i32) (result i32))
 ${BuiltinLib.map(x=>`    (func $${x.name} (import "imports" "${x.name}") ${"(param i32)".repeat(x.typeSig[0].length)} (result i32))`).join("\n")}
-
     (func $alloc (import "libmemory" "alloc") (param i32) (result i32))
     (func $load (import "libmemory" "load") (param i32) (param i32) (result i32))
     (func $store (import "libmemory" "store") (param i32) (param i32) (param i32))

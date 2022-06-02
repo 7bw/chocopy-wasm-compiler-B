@@ -606,6 +606,13 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
         if (expr.arguments.length===0)
           throw new TypeCheckError("print needs at least 1 argument");
         const tArgs = expr.arguments.map(arg => tcExpr(env, locals, arg));
+
+        tArgs.forEach(tArg => {
+          if(tArg.a && tArg.a[0].tag == "class") {
+            throw new Error("TYPE ERROR: print can't be called on objects");
+          }
+        })
+        
         return {...expr, a: [NONE, expr.a], arguments: tArgs};
       }
       if(env.classes.has(expr.name)) {

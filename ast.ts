@@ -55,7 +55,7 @@ export type Expr<A> =
   | {  a?: A, tag: "non-paren-vals", values: Array<Expr<A>> }
 
 export type Literal<A> = 
-    { a?: A, tag: "num", value: number }
+    { a?: A, tag: "num", value: bigint }
   | { a?: A, tag: "bool", value: boolean }
   | { a?: A, tag: "none" }
   | { a?: A, tag: "TypeVar" }
@@ -67,7 +67,7 @@ export enum UniOp { Neg, Not };
 
 export type Value =
     Literal<null>
-  | { tag: "object", name: string, address: number}
+  | { tag: "object", name: string, address: number }
 
 export type DestructureLHS<A> = { a?: A, lhs: AssignTarget<A>, isStarred : boolean, isIgnore : boolean}
 

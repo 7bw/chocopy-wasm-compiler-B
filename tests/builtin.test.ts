@@ -3,14 +3,15 @@ import { assertPrint } from "./asserts.test"
 // builtin-lib tests
 describe("built-in library testes",()=>{
 
-assertPrint("sleep 2 seconds",`
-st:int = 0
-ed:int = 0
-st = time()
-sleep(10)
-ed = time()
-print(ed-st)
-`, ["10"])
+// This test is non-deterministic.
+// assertPrint("sleep 2 seconds",`
+// st:int = 0
+// ed:int = 0
+// st = time()
+// sleep(10)
+// ed = time()
+// print(ed-st)
+// `, ["10"])
 
 assertPrint("factorial", `
 c : int = 4

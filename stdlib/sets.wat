@@ -3,7 +3,7 @@
     (func $alloc (import "libmemory" "alloc") (param i32) (result i32))
     (func $load (import "libmemory" "load") (param i32) (param i32) (result i32))
     (func $store (import "libmemory" "store") (param i32) (param i32) (param i32))
-    (func $print_num (import "imports" "print_num") (param i32) (result i32))
+    (func $print_set_num (import "imports" "print_set_num") (param i32) (result i32))
     (func $key_not_found (import "imports" "key_not_found") (param i32) (result i32))
 
     (func $set$add (param $baseAddr i32) (param $key i32) (result i32)
@@ -14,6 +14,7 @@
         (local.set $tagHitFlag)
         (local.get $baseAddr)
         (local.get $key)
+        ;;(i32.load)
         (i32.const 10)
         (i32.rem_u)
         (i32.mul (i32.const 4))
@@ -27,6 +28,7 @@
                 (call $alloc)
                 (local.tee $$allocPointer)
                 (local.get $key)
+                ;;(i32.load)
                 (i32.store)
                 (local.get $$allocPointer)
                 (i32.const 4)
@@ -35,6 +37,7 @@
                 (i32.store)
                 (local.get $baseAddr)
                 (local.get $key)
+                ;;(i32.load)
                 (i32.const 10)
                 (i32.rem_u)
                 (i32.mul (i32.const 4))
@@ -45,6 +48,7 @@
             (else
                 (local.get $baseAddr)
                 (local.get $key)
+                ;;(i32.load)
                 (i32.const 10)
                 (i32.rem_u)
                 (i32.mul (i32.const 4))
@@ -52,6 +56,7 @@
                 (i32.load)
                 (i32.load)
                 (local.get $key)
+                ;;(i32.load)
                 (i32.eq)
                 (if
                     (then
@@ -61,6 +66,7 @@
                 )
                 (local.get $baseAddr)
                 (local.get $key)
+                ;;(i32.load)
                 (i32.const 10)
                 (i32.rem_u)
                 (i32.mul (i32.const 4))
@@ -81,6 +87,7 @@
                             (i32.load)
                             (i32.load)
                             (local.get $key)
+                            ;;(i32.load)
                             (i32.eq)
                             (if
                                 (then
@@ -113,6 +120,7 @@
                         (call $alloc)
                         (local.tee $$allocPointer)
                         (local.get $key)
+                        ;;(i32.load)
                         (i32.store)
                         (local.get $$allocPointer)
                         (i32.const 4)
@@ -139,6 +147,7 @@
         (local.set $tagHitFlag)
         (local.get $baseAddr)
         (local.get $key)
+        ;;(i32.load)
         (i32.const 10)
         (i32.rem_u)
         (call $load)
@@ -150,11 +159,13 @@
             (else
                 (local.get $baseAddr)
                 (local.get $key)
+                ;;(i32.load)
                 (i32.const 10)
                 (i32.rem_u)
                 (call $load)
                 (i32.load)
                 (local.get $key)
+                ;;(i32.load)
                 (i32.eq)
                 (if
                     (then
@@ -164,6 +175,7 @@
                 )
                 (local.get $baseAddr)
                 (local.get $key)
+                ;;(i32.load)
                 (i32.const 10)
                 (i32.rem_u)
                 (call $load)
@@ -182,6 +194,7 @@
                                 (i32.load)
                                 (i32.load)
                                 (local.get $key)
+                                ;;(i32.load)
                                 (i32.eq)
                                 (if
                                     (then
@@ -285,6 +298,7 @@
 
         (local.get $baseAddr)
         (local.get $key)
+        ;;(i32.load)
         (i32.const 10)
         (i32.rem_u)
         (i32.mul (i32.const 4))
@@ -305,6 +319,7 @@
                         (local.get $currPtr)
                         (i32.load)
                         (local.get $key)
+                        ;;(i32.load)
                         (i32.eq)
                         ;; if *currPtr == key
                         (if
@@ -367,7 +382,7 @@
                     (local.get $i)
                     (call $load)
                     (i32.load)
-                    (call $print_num)  ;; assume num for now
+                    (call $print_set_num)  ;; assume num for now
                     (local.set $temp)
                     (local.get $baseAddr)
                     (local.get $i)
@@ -391,7 +406,7 @@
                                     (local.get $nodePtr)
                                     (i32.load)
                                     (i32.load)
-                                    (call $print_num)
+                                    (call $print_set_num)
                                     (local.set $temp)
                                     (local.get $nodePtr)
                                     (i32.load)

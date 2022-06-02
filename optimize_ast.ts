@@ -175,16 +175,27 @@ function optimizeStmt(stmt: Stmt<[Type, SourceLocation]>): Stmt<[Type, SourceLoc
 function foldBuiltin2(lsh: Literal<[Type, SourceLocation]>, rhs: Literal<[Type, SourceLocation]>, name: string): Literal<[Type, SourceLocation]> {
     switch (name) {
         case "max":
-            if (lsh.tag === "num" && rhs.tag === "num")
-                return {tag: "num", value: Math.max(lsh.value, rhs.value)};
+            if (lsh.tag === "num" && rhs.tag === "num") {
+                var value = lsh.value;
+                if (rhs.value > value) {
+                    value = rhs.value
+                }
+                return {tag: "num", value};
+            }
+                
             return {tag: "none"};
         case "min":
-            if (lsh.tag === "num" && rhs.tag === "num")
-                return {tag: "num", value: Math.min(lsh.value, rhs.value)};
+            if (lsh.tag === "num" && rhs.tag === "num") {
+                var value = lsh.value;
+                if (rhs.value < value) {
+                    value = rhs.value;
+                }
+                return {tag: "num", value};
+            }
             return {tag: "none"};
         case "pow":
             if (lsh.tag === "num" && rhs.tag === "num")
-                return {tag: "num", value: Math.pow(lsh.value, rhs.value)};
+                return {tag: "num", value: lsh.value ** rhs.value};
             return {tag: "none"};
         default:
             return {tag: "none"};
@@ -212,7 +223,7 @@ function foldBinop(lhs: Literal<[Type, SourceLocation]>, rhs: Literal<[Type, Sou
             if(lhs.tag !== "num" || rhs.tag !== "num"){
                 return {tag: "none"};
             }  
-            return {tag: "num", value: Math.floor(lhs.value / rhs.value)};
+            return {tag: "num", value: lhs.value / rhs.value}; // default to be floored in bigint
         case BinOp.Mod:
             if(lhs.tag !== "num" || rhs.tag !== "num"){
                 return {tag: "none"};
@@ -269,7 +280,7 @@ function foldUniop(expr: Literal<[Type, SourceLocation]>, op: UniOp): Literal<[T
             if(expr.tag != "num"){
                 return {tag: "none"};
             }
-            return {tag: "num", value: -1*expr.value};
+            return {tag: "num", value: -expr.value};
         case UniOp.Not:
             if(expr.tag != "bool"){
                 return {tag: "none"};

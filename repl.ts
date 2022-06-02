@@ -36,7 +36,7 @@ export class BasicREPL {
       classes: new Map(),
       locals: new Set(),
       labels: [],
-      offset: 1
+      offset: BigInt(1)
     };
     this.currentTypeEnv = defaultTypeEnv;
     this.functions = "";
@@ -75,13 +75,13 @@ export class BasicREPL {
     fields.forEach((value: Type, key: string) => {
       switch(value.tag){
         case "number":
-          list.push({tag:"num", fieldName: key, value: {tag: "num", value: heapView.at(index)}});
+          list.push({tag:"num", fieldName: key, value: {tag: "num", value: BigInt(heapView.at(index))}});
           break;
         case "bool":
           list.push({tag:"bool", fieldName: key, value: {tag: "bool", value: Boolean(heapView.at(index))}});
           break;
         case "none":
-          list.push({tag:"none", fieldName: key, value: {tag: "none", value: heapView.at(index)}});
+          list.push({tag:"none", fieldName: key, value: {tag: "none", value: BigInt(heapView.at(index))}});
           break;
         case "class":
           const objectResult : Value = {tag: "object", name: value.name, address: heapView.at(index)};

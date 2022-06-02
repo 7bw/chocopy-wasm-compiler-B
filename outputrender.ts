@@ -1,5 +1,7 @@
 import { BasicREPL, ObjectField } from "./repl";
 import { Type, Value } from "./ast";
+import { reconstructBigint } from "./webstart"
+
 
 function stringify(typ: Type, arg: any) : string {
   switch(typ.tag) {
@@ -131,7 +133,19 @@ export function renderResult(result : Value, objectTrackList: Array<ObjectField>
   }
 }
 
-export function renderPrint(typ: Type, arg : number) : any {
+export function renderPrint(typ: Type, arg : number, load : any) : any {
+  // console.log("Logging from WASM: ", arg);
+  const elt = document.createElement("pre");
+  document.getElementById("output").appendChild(elt);
+  elt.innerText = stringify(typ, arg);
+  
+  if (typ.tag === "number") {
+    elt.innerText = reconstructBigint(arg, load).toString();
+  }
+  return arg;
+}
+
+export function renderPrintHelper(typ: Type, arg : number) : any {
   // console.log("Logging from WASM: ", arg);
   const elt = document.createElement("pre");
   document.getElementById("output").appendChild(elt);

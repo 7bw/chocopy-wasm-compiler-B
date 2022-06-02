@@ -1,12 +1,14 @@
 import { Type } from './ast';
 import { RunTimeError } from './error_reporting';
 import { BOOL, NONE, NUM } from './utils';
+import {reconstructBigint, deconstructBigint, abs_big} from './webstart'
 
 type BuiltinFunc = {
   name: string
   body: Function
   typeSig: [Type[], Type]
 }
+
 // here to register builtinFunctions
 export const BuiltinLib:BuiltinFunc[] = [
   {
@@ -86,11 +88,11 @@ export const BuiltinLib:BuiltinFunc[] = [
   }
 ]
 
-
+// builtins groups defined functions, have been moved to webstart and modified to take bignums
 function factorial(x:number):number{
-  return x>0 ? x*factorial(x-1): 1 
+  return x>0 ? x*factorial(x-1): 1
 }
-
+ 
 function randint(x:number, y:number):number{
   if(y<x) 
     throw new RunTimeError("randint range error, upperBound less than lowerBound");
@@ -116,6 +118,7 @@ function comb(x:number, y:number):number{
 }
 
 function perm(x:number, y:number):number{
+
   if (x < y || x < 0 || y < 0)
     throw new RunTimeError("perm param error");
   let result = 1
@@ -134,9 +137,42 @@ function randrange(x:number, y:number, step:number){
   return result
 }
 
-
 function sleep(ms:number):number{
 	const start = Date.now();
 	while (Date.now()-start<ms);
 	return 0;
+}
+
+// Export helper functions to be called in webstart
+
+// Source: https://devimalplanet.com/how-to-generate-random-number-in-range-javascript
+export function generateRandomBigInt(x: bigint, y: bigint):bigint {
+  const difference = y - x;
+  const differenceLength = difference.toString().length;
+  let multiplier = '';
+  while (multiplier.length < differenceLength) {
+    multiplier += Math.random()
+      .toString()
+      .split('.')[1];
+  }
+  multiplier = multiplier.slice(0, differenceLength);
+  const divisor = '1' + '0'.repeat(differenceLength);
+
+  const randomDifference = (difference * BigInt(multiplier)) / BigInt(divisor);
+
+  return x + randomDifference;
+}
+
+export function gcd_help(a:bigint,b:bigint):bigint {
+  if (a<BigInt(0) || b<BigInt(0) || a==BigInt(0) && b==BigInt(0))
+    throw new RunTimeError("gcd param error, eq or less than 0");
+  return b==BigInt(0) ? a : gcd_help(b,a % b);
+}
+
+export function perm_help(x:bigint,y:bigint):bigint {
+  let result = BigInt(1)
+  for (var i = BigInt(0); i < y; i++) {
+    result *= (x - i)
+  }
+  return result
 }

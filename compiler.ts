@@ -2,13 +2,14 @@ import { Program, Stmt, Expr, Value, Class, VarInit, FunDef } from "./ir"
 import { BinOp, Type, UniOp, SourceLocation } from "./ast"
 import { BOOL, NONE, NUM } from "./utils";
 import { RunTimeError } from "./error_reporting";
+import { EnvironmentPlugin } from "webpack";
 
 export type GlobalEnv = {
   globals: Map<string, boolean>;
   classes: Map<string, Map<string, [number, Value<[Type, SourceLocation]>]>>;  
   locals: Set<string>;
   labels: Array<string>;
-  offset: number;
+  offset: bigint;
 }
 
 export const emptyEnv : GlobalEnv = { 
@@ -16,7 +17,7 @@ export const emptyEnv : GlobalEnv = {
   classes: new Map(),
   locals: new Set(),
   labels: [],
-  offset: 0 
+  offset: BigInt(0) 
 };
 
 type CompileResult = {
@@ -135,23 +136,29 @@ function codeGenExpr(expr: Expr<[Type, SourceLocation]>, env: GlobalEnv): Array<
   switch (expr.tag) {
     case "value":
       return codeGenValue(expr.value, env)
-
     case "binop":
-      const lhsStmts = codeGenValue(expr.left, env);
+      const lhsStmts = codeGenValue(expr.left, env); 
       const rhsStmts = codeGenValue(expr.right, env);
       var divbyzero = ``;
+
       if(expr.op === BinOp.IDiv || expr.op === BinOp.Mod) {
         // line number and column number
 
         divbyzero = `(i32.const ${expr.a[1].line})(i32.const ${expr.a[1].column})(call $division_by_zero)`;
       }
+
+      if (expr.left.tag === "wasmint" || expr.right.tag === "wasmint") {
+        return[...lhsStmts, ...rhsStmts, divbyzero, codeGenWasmBinOp(expr.op)]
+      }
       return [...lhsStmts, ...rhsStmts, divbyzero, codeGenBinOp(expr.op)]
 
     case "uniop":
       const exprStmts = codeGenValue(expr.expr, env);
+      var zeroLiteral : Value<[Type, SourceLocation]> = { a: expr.expr.a, tag: "num", value: BigInt(0) } ;
+      var zeroExprStmts = codeGenValue(zeroLiteral, env);
       switch(expr.op){
         case UniOp.Neg:
-          return [`(i32.const 0)`, ...exprStmts, `(i32.sub)`];
+          return [...zeroExprStmts, ...exprStmts, `(call $minus)`];
         case UniOp.Not:
           return [`(i32.const 0)`, ...exprStmts, `(i32.eq)`];
       }
@@ -189,6 +196,11 @@ function codeGenExpr(expr: Expr<[Type, SourceLocation]>, env: GlobalEnv): Array<
       if(expr.name === 'assert_not_none'){
         valStmts.push(`(i32.const ${expr.a[1].line})(i32.const ${expr.a[1].column}) `);
       }
+      if (expr.name.slice(0, 3) == "set") {
+        //valStmts.push(`(call $load)`)
+        valStmts.push(`(call $get_num)`)
+      }
+      
       valStmts.push(`(call $${expr.name})`);
       return valStmts;
 
@@ -211,11 +223,36 @@ function codeGenExpr(expr: Expr<[Type, SourceLocation]>, env: GlobalEnv): Array<
 function codeGenValue(val: Value<[Type, SourceLocation]>, env: GlobalEnv): Array<string> {
   switch (val.tag) {
     case "num":
-      return ["(i32.const " + val.value + ")"];
+      var generatedString = ``;
+      var curVal = val.value;
+      var i = 1; // the first field is preserved for the size
+      const base = BigInt(2 ** 31);
+
+      // use a do-while loop to address the edge case of initial curVal == 0
+      do {
+        var remainder = curVal % base;
+
+        generatedString += `(i32.const ${i})\n(i32.const ${remainder})\n(call $store)`; // call the store function with address, offset, and val
+
+        i += 1; // next iteration
+        curVal /= base; // default to use floor() 
+      } while (curVal > 0);
+
+      // "i" represents the number of fields
+      var prefix = ``;
+      var allocation = `(i32.const ${i})\n(call $alloc)\n`; // allocate spaces for the number
+      var storeSize = `(i32.const 0)\n(i32.const ${i - 1})\n(call $store)\n`; // store the number of digits of the number at the first field
+      while (i > 0) {
+        prefix += `(i32.const 0)\n(call $alloc)\n`; // prepare the addresses for the store calls
+        i -= 1;
+      }
+      // We call $alloc (n + 1) times, call $store n times, and return 1 time.
+      prefix += allocation + storeSize;
+      return [prefix + generatedString];
     case "wasmint":
       return ["(i32.const " + val.value + ")"];
     case "bool":
-      return [`(i32.const ${Number(val.value)})`];
+      return [`(i32.const ${BigInt(val.value)})`];
     case "none":
       return [`(i32.const 0)`];
     case "id":
@@ -227,7 +264,7 @@ function codeGenValue(val: Value<[Type, SourceLocation]>, env: GlobalEnv): Array
   }
 }
 
-function codeGenBinOp(op : BinOp) : string {
+function codeGenWasmBinOp(op : BinOp) : string {
   switch(op) {
     case BinOp.Plus:
       return "(i32.add)"
@@ -251,6 +288,39 @@ function codeGenBinOp(op : BinOp) : string {
       return "(i32.lt_s)"
     case BinOp.Gt:
       return "(i32.gt_s)"
+    case BinOp.Is:
+      return "(i32.eq)";
+    case BinOp.And:
+      return "(i32.and)"
+    case BinOp.Or:
+      return "(i32.or)"
+  }
+}
+
+function codeGenBinOp(op : BinOp) : string {
+  switch(op) {
+    case BinOp.Plus:
+      return "(call $plus)"
+    case BinOp.Minus:
+      return "(call $minus)"
+    case BinOp.Mul:
+      return "(call $mul)"
+    case BinOp.IDiv:
+      return "(call $iDiv)"
+    case BinOp.Mod:
+      return "(call $mod)"
+    case BinOp.Eq:
+      return "(call $eq)"
+    case BinOp.Neq:
+      return "(call $neq)"
+    case BinOp.Lte:
+      return "(call $lte)"
+    case BinOp.Gte:
+      return "(call $gte)"
+    case BinOp.Lt:
+      return "(call $lt)"
+    case BinOp.Gt:
+      return "(call $gt)"
     case BinOp.Is:
       return "(i32.eq)";
     case BinOp.And:
