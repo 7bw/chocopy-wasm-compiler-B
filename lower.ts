@@ -399,6 +399,34 @@ function flattenExprToExpr(e : AST.Expr<[Type, SourceLocation]>, blocks: Array<I
       const argvals = argpairs.map(cp => cp[2]).flat();
       var objTyp = e.obj.a[0];
       if(objTyp.tag === "set") {
+        // if (argvals[0].a[0].tag === "list"){
+        //   argvals[0].a[0] = {tag: "set", valueType: argvals[0].a[0].type};
+        // }
+        // if (argstmts[1].tag === 'expr'){
+        //   console.log(argstmts[1].expr.arguments);
+        // }
+        console.log([argstmts[1]])
+        if(arginits[0].type.tag === "list"){
+          argstmts.forEach(e => {
+            if (e.tag === "assign"){
+              // do not know what to do
+            }else if(e.tag === "store"){
+              console.log(e.value.a);
+              // e = {a: e.value.a, tag: "expr", expr: {a: , tag: "call", name: "set&add", arguments: }}
+            }else{
+              throw new Error("Unknown data type convert");
+            }
+          })
+        }
+        if(arginits[0].type.tag === "list"){
+          arginits[0].type = {tag: "set", valueType: arginits[0].type.type};
+        }
+
+        // console.log(argpairs[0]);
+
+        // argstmts.forEach(a => {
+        //   console.log(a)
+        // })
         const callMethod : IR.Expr<[Type, SourceLocation]> = { a: e.a, tag: "call", name: `set$${e.method}`, arguments: [objval, ...argvals] }
         return [
           [...objinits, ...arginits],

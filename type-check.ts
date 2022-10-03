@@ -267,8 +267,8 @@ export function tcStmt(env : GlobalTypeEnv, locals : LocalTypeEnv, stmt : Stmt<S
       } else {
         throw new TypeCheckError("Unbound id: " + stmt.name, stmt.a);
       }
-      console.log("nameTyp: ", nameTyp);
-      console.log("left: ", tValExpr.a[0] );
+      // console.log("nameTyp: ", nameTyp);
+      // console.log("left: ", tValExpr.a[0] );
       if(!isAssignable(env, tValExpr.a[0], nameTyp)) 
         throw new TypeCheckError("`" + tValExpr.a[0].tag + "` cannot be assigned to `" + nameTyp.tag + "` type", stmt.a);
       return {a: [NONE, stmt.a], tag: stmt.tag, name: stmt.name, value: tValExpr};
@@ -631,7 +631,7 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
       } else if(env.functions.has(expr.name)) {
         const [argTypes, retType] = env.functions.get(expr.name);
         const tArgs = expr.arguments.map(arg => tcExpr(env, locals, arg));
-        console.log(tArgs);
+        // console.log(tArgs);
 
         if(argTypes.length === expr.arguments.length &&
            tArgs.every((tArg, i) => isAssignable(env, tArg.a[0], argTypes[i]))) {
@@ -695,9 +695,13 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
           if (expr.method === "update") {
             if (tArgs[0].a[0].tag === 'set') {
               if (tArgs[0].a[0].valueType !== tObj.a[0].valueType) {
-                throw new TypeCheckError("Mismatched Type when calling method")
+                throw new TypeCheckError("Mismatched Type when calling method on set")
               }
-            } else {
+            } else if(tArgs[0].a[0].tag === "list"){
+              if (tArgs[0].a[0].type !== tObj.a[0].valueType) {
+                throw new TypeCheckError("Mismatched Type when calling method on list")
+              }
+            } else{
               // TODO add support for list and string
               throw new TypeCheckError("Unknown Type when calling method")
             }
@@ -707,7 +711,16 @@ export function tcExpr(env : GlobalTypeEnv, locals : LocalTypeEnv, expr : Expr<S
                 if (t.value.a[0] !== tObj.a[0].valueType){
                   throw new TypeCheckError("Mismatched Type when calling method")
                 }
-              }else{
+              }else if(t.tag === "call"){
+                if(tObj.a[0].tag === 'set'){
+                  if (t.tag !== String(tObj.a[0].valueType)){
+                    console.log(t.a[0].tag)
+                    console.log(tObj.a[0].valueType)
+                    throw new TypeCheckError("Mismatched Type when calling method")
+                  }
+                }
+              } else{
+                console.log(t);
                 throw new TypeCheckError("Unknown Type when calling method")
               }
             })

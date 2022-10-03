@@ -157,8 +157,6 @@ export function traverseExpr(c : TreeCursor, s : string) : Expr<SourceLocation> 
         throw new Error("Parse error after " + s.substring(c.from, c.to));
       }
 
-      console.log(elements)
-
       c.parent(); //up from ArrayExpression
       return { 
         a: location,
